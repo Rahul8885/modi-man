@@ -8,6 +8,6 @@ export const GAME_CONFIG = {
   LASER_DRAIN_RATE: 20,      // per second
   LASER_RECHARGE_RATE: 10,   // per second
   GRAVITY: 600,
-  GROUND_Y: 270,
+  GROUND_Y: 630, // Adjusted to visually sit on the foreground road/path
   INVINCIBILITY_DURATION: 2000,  // ms
 }

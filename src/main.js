@@ -4,6 +4,7 @@ import PreloadScene from './scenes/PreloadScene.js'
 import MenuScene from './scenes/MenuScene.js'
 import GameScene from './scenes/GameScene.js'
 import HUDScene from './scenes/HUDScene.js'
+import CitySelectScene from './scenes/CitySelectScene.js'
 
 const config = {
   type: Phaser.AUTO,
@@ -27,6 +28,7 @@ const config = {
     BootScene,
     PreloadScene,
     MenuScene,
+    CitySelectScene,
     GameScene,
     HUDScene
   ]

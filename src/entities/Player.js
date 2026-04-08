@@ -22,6 +22,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.isHurt = false
   }
 
+  die() {
+    if (this.isDead) return
+    this.isDead = true
+    this.play('hurt', true)
+    this.body.setVelocityY(-300)
+    // Optional: disable collision
+    this.body.checkCollision.none = true
+  }
+
   createAnimations() {
     const anims = this.scene.anims
 

@@ -14,9 +14,15 @@ export default class PreloadScene extends Phaser.Scene {
     const modiPath = '/src/assets/sprites/modi/'
     const enemiesPath = '/src/assets/sprites/enemies/'
     
-    // Use 64x64 frame dimensions as outlined in the kickstart text
+    // Backgrounds
+    for (let i = 1; i <= 4; i++) {
+        this.load.image(`delhi_${i}`, `/src/assets/backgrounds/delhi/delhi_${i}.png`)
+        this.load.image(`mumbai_${i}`, `/src/assets/backgrounds/mumbai/mumbai_${i}.png`)
+    }
+
+    // Use 128x128 frame dimensions for Modi
     const loadSprite = (key, path) => {
-        this.load.spritesheet(key, path, { frameWidth: 64, frameHeight: 64 })
+        this.load.spritesheet(key, path, { frameWidth: 128, frameHeight: 128 })
     }
 
     // Modi Sprites
