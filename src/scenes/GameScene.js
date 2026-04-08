@@ -12,6 +12,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
+    this.lives = 3
     this.score = 0
     this.scrollSpeed = GAME_CONFIG.SCROLL_SPEED_BASE
 
@@ -51,6 +52,7 @@ export default class GameScene extends Phaser.Scene {
     this.player = new Player(this, 120, GAME_CONFIG.GROUND_Y - 32)
     this.physics.add.collider(this.player, this.floor)
     this.physics.add.collider(this.player, this.enemies, this.hitEnemy, null, this)
+    this.physics.add.overlap(this.player.lasers, this.enemies, this.hitEnemyWithLaser, null, this)
 
     // Inputs
     this.cursors = this.input.keyboard.createCursorKeys()
@@ -59,6 +61,13 @@ export default class GameScene extends Phaser.Scene {
     // Boot the HUD
     this.scene.launch('HUDScene')
     this.hud = this.scene.get('HUDScene')
+
+    // Slight delay to ensure HUD is created before updating lives
+    this.time.delayedCall(100, () => {
+        if (this.hud && this.hud.updateLives) {
+            this.hud.updateLives(this.lives)
+        }
+    })
   }
 
   spawnEnemy() {
@@ -71,23 +80,51 @@ export default class GameScene extends Phaser.Scene {
     const ufo = this.enemies.create(x, spawnY, 'ufo_hover')
     ufo.body.allowGravity = false
     ufo.setVelocityX(-this.scrollSpeed)
+    
+    // Play hover animation and shrink physics bounds (e.g. 60x60 out of 128x128)
+    ufo.play('ufo_hover_anim', true)
+    ufo.body.setSize(60, 60)
+    ufo.body.setOffset(34, 34)
+  }
+
+  hitEnemyWithLaser(laser, enemy) {
+    laser.destroy()
+    enemy.setVelocityX(-this.scrollSpeed * 0.2) // Slow it down heavily
+    enemy.body.checkCollision.none = true
+    enemy.play('ufo_explosion_anim', true)
+    
+    // Add extra score for kill
+    this.score += 50
+    this.time.delayedCall(400, () => {
+        if (enemy) enemy.destroy()
+    })
   }
 
   hitEnemy(player, enemy) {
-    if (player.isDead) return
-    player.die()
-    
-    this.cameras.main.shake(200, 0.01)
-    
-    this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'GAME OVER', {
-      fontSize: '64px',
-      fill: '#ff0000',
-      fontStyle: 'bold'
-    }).setOrigin(0.5).setDepth(10)
+    if (player.isDead || player.isInvincible) return
 
-    this.time.delayedCall(2000, () => {
-      this.scene.start('MenuScene')
-    })
+    // Player took real damage
+    if (player.takeHit() === false) {
+        this.lives--
+        if (this.hud && this.hud.updateLives) {
+            this.hud.updateLives(this.lives)
+        }
+        
+        this.cameras.main.shake(150, 0.005)
+
+        if (this.lives <= 0) {
+            player.die()
+            this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'GAME OVER', {
+              fontSize: '64px',
+              fill: '#ff0000',
+              fontStyle: 'bold'
+            }).setOrigin(0.5).setDepth(10)
+
+            this.time.delayedCall(2000, () => {
+              this.scene.start('MenuScene')
+            })
+        }
+    }
   }
 
   update(time, delta) {
@@ -122,11 +159,11 @@ export default class GameScene extends Phaser.Scene {
 
     if (this.hud) {
       this.hud.updateScore(this.score)
-      this.hud.updateLaser(this.player.laserCharge)
+      if (this.player) this.hud.updateLaser(this.player.laserCharge)
     }
 
     if (this.player) {
-      this.player.update(this.cursors, this.keys)
+      this.player.update(this.cursors, this.keys, delta)
     }
   }
 }

@@ -23,6 +23,21 @@ export default class HUDScene extends Phaser.Scene {
     
     // Draw active laser bar
     this.laserBar = this.add.rectangle(90, 65, 100, 14, 0xff0000).setOrigin(0, 0.5)
+
+    // Lives icons
+    this.lifeIcons = []
+    const startX = this.sys.game.config.width - 150
+    for(let i=0; i<3; i++) {
+        const icon = this.add.image(startX + (i * 45), 30, 'modi_life').setOrigin(0.5).setScale(0.15) 
+        this.lifeIcons.push(icon)
+    }
+  }
+
+  updateLives(lives) {
+    if (!this.lifeIcons) return
+    for(let i=0; i<3; i++) {
+        this.lifeIcons[i].setVisible(i < lives)
+    }
   }
 
   updateScore(score) {

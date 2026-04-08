@@ -20,6 +20,9 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.image(`mumbai_${i}`, `/src/assets/backgrounds/mumbai/mumbai_${i}.png`)
     }
 
+    // UI Elements
+    this.load.image('modi_life', '/src/assets/modi_life.png')
+
     // Use 128x128 frame dimensions for Modi
     const loadSprite = (key, path) => {
         this.load.spritesheet(key, path, { frameWidth: 128, frameHeight: 128 })
@@ -46,7 +49,21 @@ export default class PreloadScene extends Phaser.Scene {
   }
 
   create() {
-    // Generate some basic animations if possible, or wait until entities create them
+    // Generate UFO animations
+    this.anims.create({
+      key: 'ufo_hover_anim',
+      frames: this.anims.generateFrameNumbers('ufo_hover', { start: 0, end: 5 }),
+      frameRate: 12,
+      repeat: -1
+    })
+
+    this.anims.create({
+      key: 'ufo_explosion_anim',
+      frames: this.anims.generateFrameNumbers('ufo_explosion', { start: 0, end: 5 }), // assuming it has frames, we'll configure dynamically if we must, but standard 6 frames usually
+      frameRate: 15,
+      repeat: 0
+    })
+
     this.scene.start('MenuScene')
   }
 }
