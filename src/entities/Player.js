@@ -9,9 +9,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this)
 
     // Physics sizing
-    this.body.setSize(32, 50)
-    // Offset standard 64x64 frame for center
-    this.body.setOffset(16, 14) 
+    this.body.setSize(40, 80)
+    this.body.setOffset(44, 48)
+    this.body.setCollideWorldBounds(true)
+    this.body.setMaxVelocity(0, 500)
 
     this.createAnimations()
     
@@ -21,6 +22,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.isDead = false
     this.isHurt = false
     this.isInvincible = false
+    this.lastLaserAt = 0
     this.lasers = scene.physics.add.group() // Laser graphics group
   }
 
@@ -40,6 +42,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.isInvincible = true
     this.isHurt = true
+    this.body.setVelocityX(0)
     this.play(this.body.touching.down ? 'hurt_run' : 'hurt_fly', true)
 
   // Flash effect for the configured invincibility duration
@@ -64,27 +67,53 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   shootLaser() {
-    // Only allow firing while flying (no ground run-laser sprite available currently)
-    if (this.isDead || this.isHurt || this.laserCharge < 10 || this.body.touching.down) return
-    this.laserCharge -= 10
+    // Allow firing while on ground or air (drain exists).
+    const shotCost = GAME_CONFIG.LASER_SHOT_COST || 20
+    const now = this.scene.time.now
+    if (
+      this.isDead ||
+      this.isHurt ||
+      this.laserCharge < shotCost ||
+      this.lasers.countActive(true) >= 10 ||
+      now - this.lastLaserAt < 120
+    ) return false
 
-    // Play flying laser animation
-    this.play('fly_laser', true)
+    this.lastLaserAt = now
+    this.laserCharge -= shotCost
 
-    // Draw Thin glowing rectangle originating roughly from eye-level
-    const laser = this.scene.add.rectangle(this.x + 36, this.y - 10, 48, 6, 0xff3344)
+    // Show eye glow while firing; projectile handles the actual hit.
+    const wasFlying = !(this.body && this.body.touching && this.body.touching.down)
+    if (wasFlying && this.scene.anims.exists('fly_laser')) {
+      this.play('fly_laser', true)
+    }
+    this.scene.time.delayedCall(140, () => {
+      if (this.isDead || this.isHurt) return
+      if (this.body && this.body.touching && this.body.touching.down) {
+        if (this.scene.anims.exists('run')) this.play('run', true)
+      } else if (this.scene.anims.exists('fly')) {
+        this.play('fly', true)
+      }
+    })
+
+    // Draw a glowing projectile from Modi's eye level.
+    const laser = this.scene.add.rectangle(this.x + 44, this.y - 24, 160, 10, 0xff2638, 1)
     laser.setOrigin(0, 0.5)
     laser.setBlendMode(Phaser.BlendModes.ADD)
+    laser.setStrokeStyle(2, 0xffd0d0, 0.9)
     this.scene.physics.add.existing(laser)
     laser.body.allowGravity = false
-    laser.body.setVelocityX(800)
+    laser.body.setVelocityX(GAME_CONFIG.LASER_SPEED || 700)
     // Make the physics body match the visible rectangle
-    if (laser.body.setSize) laser.body.setSize(48, 6)
+    if (laser.body.setSize) laser.body.setSize(160, 12)
+    if (laser.body.setOffset) laser.body.setOffset(0, -1)
+    // Put laser above player visuals
+    if (laser.setDepth) laser.setDepth(50)
 
     this.lasers.add(laser)
 
     // Slight camera shake for juice
     if (this.scene.cameras && this.scene.cameras.main) this.scene.cameras.main.shake(50, 0.002)
+    return true
   }
 
   createAnimations() {
@@ -118,6 +147,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.isDead) return
 
     const dt = (delta || (1000 / 60)) / 1000
+    this.body.setVelocityX(0)
+    if (this.x < 120) this.x = 120
+    if (this.x > 180) this.x = 180
 
     // Natural recharge (delta-based)
     if (this.laserCharge < GAME_CONFIG.LASER_CHARGE_MAX) {

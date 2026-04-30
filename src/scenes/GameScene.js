@@ -48,15 +48,19 @@ export default class GameScene extends Phaser.Scene {
     this.floor.setAlpha(0)
     this.physics.add.existing(this.floor, true) // static 
 
-    // Character
-    this.player = new Player(this, 120, GAME_CONFIG.GROUND_Y - 32)
+    // Character center: physics body bottom now lines up with the road top.
+    this.player = new Player(this, 120, GAME_CONFIG.GROUND_Y - 64)
     this.physics.add.collider(this.player, this.floor)
-    this.physics.add.collider(this.player, this.enemies, this.hitEnemy, null, this)
+    this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, null, this)
     this.physics.add.overlap(this.player.lasers, this.enemies, this.hitEnemyWithLaser, null, this)
 
     // Inputs
     this.cursors = this.input.keyboard.createCursorKeys()
-    this.keys = this.input.keyboard.addKeys('X')
+    this.keys = {
+      X: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X)
+    }
+    this.lastTapAt = 0
+    this.input.on('pointerdown', this.handlePointerDown, this)
 
     // Boot the HUD
     this.scene.launch('HUDScene')
@@ -88,20 +92,37 @@ export default class GameScene extends Phaser.Scene {
   }
 
   hitEnemyWithLaser(laser, enemy) {
+    if (!laser.active || !enemy.active || enemy.getData('dying')) return
+    enemy.setData('dying', true)
     laser.destroy()
     enemy.setVelocityX(-this.scrollSpeed * 0.2) // Slow it down heavily
     enemy.body.checkCollision.none = true
     enemy.play('ufo_explosion_anim', true)
     
     // Add extra score for kill
-    this.score += 50
+    this.score += 150
     this.time.delayedCall(400, () => {
         if (enemy) enemy.destroy()
     })
   }
 
+  handlePointerDown(pointer) {
+    if (!this.player || this.player.isDead) return
+
+    const now = pointer.event?.timeStamp || this.time.now
+    if (now - this.lastTapAt <= 300) {
+      this.player.shootLaser()
+      this.lastTapAt = 0
+      return
+    }
+
+    this.lastTapAt = now
+  }
+
   hitEnemy(player, enemy) {
     if (player.isDead || player.isInvincible) return
+    player.x = Phaser.Math.Clamp(player.x, 120, 180)
+    player.body.setVelocityX(0)
 
     // Player took real damage
     if (player.takeHit() === false) {
@@ -142,7 +163,7 @@ export default class GameScene extends Phaser.Scene {
       
       // Update Enemies
       this.enemies.getChildren().forEach(enemy => {
-        enemy.setVelocityX(-this.scrollSpeed)
+        if (enemy.body && !enemy.body.checkCollision.none && !enemy.getData('dying')) enemy.setVelocityX(-this.scrollSpeed)
         if (enemy.x < -100) {
           enemy.destroy()
         }

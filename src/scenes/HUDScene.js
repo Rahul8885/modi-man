@@ -7,29 +7,30 @@ export default class HUDScene extends Phaser.Scene {
   }
 
   create() {
-    this.scoreText = this.add.text(20, 20, 'Score: 0', {
-      fontSize: '24px',
+    const width = this.sys.game.config.width
+    const height = this.sys.game.config.height
+
+    this.scoreText = this.add.text(width - 16, 14, 'Score: 0', {
+      fontSize: '14px',
       fill: '#FFF',
       fontStyle: 'bold'
-    })
+    }).setOrigin(1, 0).setScrollFactor(0).setDepth(100)
 
-    this.laserBarText = this.add.text(20, 55, 'Laser', {
-      fontSize: '18px',
+    this.laserBarText = this.add.text(16, height - 36, 'Laser', {
+      fontSize: '10px',
       fill: '#FF3333'
-    })
+    }).setScrollFactor(0).setDepth(100)
 
-    // Draw background for laser bar
-    this.add.rectangle(90, 65, 100, 14, 0x550000).setOrigin(0, 0.5)
+    this.add.rectangle(16, height - 16, 70, 8, 0x550000).setOrigin(0, 0.5).setScrollFactor(0).setDepth(100)
     
-    // Draw active laser bar
-    this.laserBar = this.add.rectangle(90, 65, 100, 14, 0xff0000).setOrigin(0, 0.5)
+    this.laserBar = this.add.rectangle(16, height - 16, 70, 8, 0xff0000).setOrigin(0, 0.5).setScrollFactor(0).setDepth(101)
 
     // Lives icons
     this.lifeIcons = []
-    const startX = this.sys.game.config.width - 150
+    const startX = 18
     for(let i=0; i<3; i++) {
-        const icon = this.add.image(startX + (i * 45), 30, 'modi_life').setOrigin(0.5).setScale(0.15) 
-        this.lifeIcons.push(icon)
+      const icon = this.add.image(startX + (i * 20), 18, 'modi_life').setOrigin(0.5).setScale(0.04).setScrollFactor(0).setDepth(100)
+      this.lifeIcons.push(icon)
     }
   }
 
@@ -49,7 +50,7 @@ export default class HUDScene extends Phaser.Scene {
   updateLaser(charge) {
     if (this.laserBar) {
       const pct = Math.max(0, Math.min(1, charge / GAME_CONFIG.LASER_CHARGE_MAX))
-      this.laserBar.width = 100 * pct
+      this.laserBar.width = 70 * pct
     }
   }
 }
