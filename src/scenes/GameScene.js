@@ -52,7 +52,6 @@ export default class GameScene extends Phaser.Scene {
     this.player = new Player(this, 120, GAME_CONFIG.GROUND_Y - 64)
     this.physics.add.collider(this.player, this.floor)
     this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, null, this)
-    this.physics.add.overlap(this.player.lasers, this.enemies, this.hitEnemyWithLaser, null, this)
 
     // Inputs
     this.cursors = this.input.keyboard.createCursorKeys()
@@ -106,6 +105,49 @@ export default class GameScene extends Phaser.Scene {
     })
   }
 
+  hitEnemyWithBeam(enemy, hitX) {
+    if (!enemy.active || enemy.getData('dying')) return
+
+    enemy.setData('dying', true)
+    this.player.holdLaserAt(hitX, this.time.now + 420)
+    enemy.setVelocityX(-this.scrollSpeed * 0.2)
+    enemy.body.checkCollision.none = true
+    enemy.play('ufo_explosion_anim', true)
+
+    this.score += 150
+    this.time.delayedCall(400, () => {
+      if (enemy) enemy.destroy()
+    })
+  }
+
+  getBeamTarget(ray) {
+    let target = null
+    let hitX = Number.POSITIVE_INFINITY
+
+    this.enemies.getChildren().forEach(enemy => {
+      if (!enemy.active || enemy.getData('dying')) return
+
+      const box = {
+        left: enemy.x - 45,
+        right: enemy.x + 45,
+        top: enemy.y - 28,
+        bottom: enemy.y + 20
+      }
+
+      const verticalHit = ray.startY >= box.top && ray.startY <= box.bottom
+      const horizontalHit = box.right >= ray.startX && box.left <= ray.endX
+      if (!verticalHit || !horizontalHit) return
+
+      const candidateHitX = Math.max(box.left, ray.startX)
+      if (candidateHitX < hitX) {
+        hitX = candidateHitX
+        target = enemy
+      }
+    })
+
+    return target ? { enemy: target, hitX } : null
+  }
+
   handlePointerDown(pointer) {
     if (!this.player || this.player.isDead) return
 
@@ -154,6 +196,7 @@ export default class GameScene extends Phaser.Scene {
       const dt = delta / 1000
       const distancePoints = (this.scrollSpeed * dt) / 10
       this.score += distancePoints
+      this.player.update(this.cursors, this.keys, delta)
       
       // Update Parallax Backgrounds (Scale 2 means shift is doubled visually, so divide scrolling speed by 2)
       this.bg1.tilePositionX += (this.scrollSpeed * dt * 1.0) / 2
@@ -168,6 +211,16 @@ export default class GameScene extends Phaser.Scene {
           enemy.destroy()
         }
       })
+
+      const ray = this.player.getLaserRay()
+      if (ray) {
+        const beamTarget = this.getBeamTarget(ray)
+        if (beamTarget) {
+          this.hitEnemyWithBeam(beamTarget.enemy, beamTarget.hitX)
+        } else {
+          this.player.setLaserEndX(this.sys.game.config.width + 80)
+        }
+      }
       
       // Speed Ramp
       if (this.scrollSpeed < GAME_CONFIG.SCROLL_SPEED_MAX) {
@@ -183,8 +236,5 @@ export default class GameScene extends Phaser.Scene {
       if (this.player) this.hud.updateLaser(this.player.laserCharge)
     }
 
-    if (this.player) {
-      this.player.update(this.cursors, this.keys, delta)
-    }
   }
 }

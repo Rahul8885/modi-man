@@ -23,17 +23,16 @@ export default class PreloadScene extends Phaser.Scene {
     // UI Elements
     this.load.image('modi_life', '/src/assets/modi_life.png')
 
-    // Use 128x128 frame dimensions for Modi
-    const loadSprite = (key, path) => {
-        this.load.spritesheet(key, path, { frameWidth: 128, frameHeight: 128 })
+    const loadSprite = (key, path, frameHeight = 128) => {
+        this.load.spritesheet(key, path, { frameWidth: 128, frameHeight })
     }
 
     // Modi Sprites
     loadSprite('modi_run', modiPath + 'Running.png')
     loadSprite('modi_fly', modiPath + 'Flying.png')
     loadSprite('modi_fly_laser', modiPath + 'Flying_Lasers.png')
-    loadSprite('modi_jump', modiPath + 'Jumping.png')
-    loadSprite('modi_land', modiPath + 'Landing.png')
+    loadSprite('modi_jump', modiPath + 'Jumping.png', 124)
+    loadSprite('modi_land', modiPath + 'Landing.png', 124)
     loadSprite('modi_hurt_run', modiPath + 'hurt_run.png')
     loadSprite('modi_hurt_fly', modiPath + 'hurt_flight.png')
     loadSprite('modi_idle', modiPath + 'modi_idle.png')
