@@ -13,6 +13,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.setOffset(44, 48)
     this.body.setCollideWorldBounds(true)
     this.body.setMaxVelocity(0, 500)
+    this.setScale(1)
 
     this.createAnimations()
     
@@ -28,6 +29,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.laserEndX = scene.sys.game.config.width + 80
     this.isLaserFiring = false
     this.laserBeamGraphics = scene.add.graphics().setDepth(60)
+    this.groundedSince = scene.time.now
+    this.airborneSince = 0
+    this.moveState = 'run'
   }
 
   die() {
@@ -111,11 +115,17 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     return Boolean(this.body && (this.body.blocked.down || this.body.touching.down))
   }
 
+  snapToGround() {
+    this.y = GAME_CONFIG.GROUND_Y - 64
+    this.body.setVelocityY(0)
+  }
+
   playMovementAnim(key) {
     if (this.isHurt || this.isDead) return
+    if (this.moveState === key) return
     if (!this.scene.anims.exists(key)) return
-    if (this.anims.currentAnim?.key === key) return
 
+    this.moveState = key
     this.stop()
     this.setTexture(key === 'run' ? 'modi_run' : 'modi_fly', 0)
     try { this.play(key, true) } catch (e) { console.warn(`failed to play ${key} anim`, e) }
@@ -232,19 +242,33 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.laserCharge = Math.min(this.laserCharge, GAME_CONFIG.LASER_CHARGE_MAX)
     }
 
-  this.updateLaserBeam(dt, laserHeld)
+    this.updateLaserBeam(dt, laserHeld)
 
-    // Input handlers & State Machine
-  const spaceHeld = Boolean(cursors && cursors.space && cursors.space.isDown)
-  if (spaceHeld) {
+    const now = this.scene.time.now
+    const spaceHeld = Boolean(cursors && cursors.space && cursors.space.isDown)
+    const grounded = this.isGrounded()
+    if (spaceHeld) {
+      this.groundedSince = 0
+      if (!this.airborneSince) this.airborneSince = now
       this.body.setVelocityY(GAME_CONFIG.PLAYER_FLY_VELOCITY)
-      this.setScale(1.15)
+      this.setScale(1)
       this.playMovementAnim('fly')
-    } else if (this.isGrounded()) {
-      this.setScale(1.0)
+      return
+    }
+
+    if (grounded) {
+      this.airborneSince = 0
+      if (!this.groundedSince) this.groundedSince = now
+      this.setScale(1)
+      this.snapToGround()
       this.playMovementAnim('run')
-    } else {
-      this.setScale(1.15)
+      return
+    }
+
+    this.groundedSince = 0
+    if (!this.airborneSince) this.airborneSince = now
+    if (now - this.airborneSince >= 140) {
+      this.setScale(1)
       this.playMovementAnim('fly')
     }
 
