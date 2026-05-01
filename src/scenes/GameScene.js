@@ -105,12 +105,7 @@ export default class GameScene extends Phaser.Scene {
     enemy.setVelocityX(-this.scrollSpeed * 0.2) // Slow it down heavily
     enemy.body.checkCollision.none = true
     enemy.play('ufo_explosion_anim', true)
-    
-    // Add extra score for kill
-    this.score += 150
-    this.time.delayedCall(400, () => {
-        if (enemy) enemy.destroy()
-    })
+    this.finishEnemyExplosion(enemy)
   }
 
   hitEnemyWithBeam(enemy, hitX) {
@@ -122,9 +117,14 @@ export default class GameScene extends Phaser.Scene {
     enemy.body.checkCollision.none = true
     enemy.play('ufo_explosion_anim', true)
 
-    this.score += 150
+    this.finishEnemyExplosion(enemy)
+  }
+
+  finishEnemyExplosion(enemy) {
     this.time.delayedCall(400, () => {
-      if (enemy) enemy.destroy()
+      if (!enemy) return
+      this.score += 150
+      enemy.destroy()
     })
   }
 
@@ -199,11 +199,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Increase distance score
     if (!this.player.isDead) {
       const dt = delta / 1000
-      const distancePoints = (this.scrollSpeed * dt) / 10
-      this.score += distancePoints
       this.player.update(this.cursors, this.keys, delta)
       
       // Update Parallax Backgrounds. Divide by layer scale because TileSprite scrolls in source pixels.
