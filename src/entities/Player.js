@@ -116,7 +116,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   snapToGround() {
-    this.y = GAME_CONFIG.GROUND_Y - 64
+    const groundY = this.scene.groundY || GAME_CONFIG.GROUND_Y
+    this.y = groundY - 64
     this.body.setVelocityY(0)
   }
 

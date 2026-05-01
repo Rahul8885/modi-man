@@ -22,12 +22,21 @@ export default class GameScene extends Phaser.Scene {
     // Very dark background
     this.cameras.main.setBackgroundColor('#1a0a2e')
 
-    // Parallax backgrounds (Layer 4 is furthest, Layer 1 is foreground)
-    // The images are 640x360, we set TileSprite size to 640x360 and scale by 2 to fit 1280x720 without vertical tiling.
-    this.bg4 = this.add.tileSprite(0, 0, 640, 360, `${this.selectedCity}_4`).setOrigin(0, 0).setScale(2).setDepth(-4)
-    this.bg3 = this.add.tileSprite(0, 0, 640, 360, `${this.selectedCity}_3`).setOrigin(0, 0).setScale(2).setDepth(-3)
-    this.bg2 = this.add.tileSprite(0, 0, 640, 360, `${this.selectedCity}_2`).setOrigin(0, 0).setScale(2).setDepth(-2)
-    this.bg1 = this.add.tileSprite(0, 0, 640, 360, `${this.selectedCity}_1`).setOrigin(0, 0).setScale(2).setDepth(-1)
+    const baseLayerWidth = 640
+    const baseLayerHeight = 360
+    const layerScale = width / baseLayerWidth
+    const groundKey = `${this.selectedCity}_1`
+    const groundSource = this.textures.get(groundKey).getSourceImage()
+    const groundBaseHeight = groundSource.height
+    const groundDisplayHeight = groundBaseHeight * layerScale
+    this.groundY = height - groundDisplayHeight
+
+    // Parallax backgrounds. Ground is a cropped strip, so its TileSprite height must match
+    // the PNG height; otherwise Phaser tiles it vertically and stacks roads.
+    this.bg4 = this.add.tileSprite(0, 0, baseLayerWidth, baseLayerHeight, `${this.selectedCity}_4`).setOrigin(0, 0).setScale(layerScale).setDepth(-4)
+    this.bg3 = this.add.tileSprite(0, 0, baseLayerWidth, baseLayerHeight, `${this.selectedCity}_3`).setOrigin(0, 0).setScale(layerScale).setDepth(-3)
+    this.bg2 = this.add.tileSprite(0, 0, baseLayerWidth, baseLayerHeight, `${this.selectedCity}_2`).setOrigin(0, 0).setScale(layerScale).setDepth(-2)
+    this.bg1 = this.add.tileSprite(0, this.groundY, baseLayerWidth, groundBaseHeight, groundKey).setOrigin(0, 0).setScale(layerScale).setDepth(-1)
 
     // Enemies group
     this.enemies = this.physics.add.group()
@@ -40,16 +49,15 @@ export default class GameScene extends Phaser.Scene {
       loop: true
     })
 
-    // Floor physics
-    // Using x=320, y=315 (which is GroundY 270 + bounds)
-    const floorHeight = 180
-    const floorY = GAME_CONFIG.GROUND_Y + floorHeight / 2
+    // Floor physics: top edge matches the cropped ground image bounding box.
+    const floorHeight = Math.max(groundDisplayHeight, 80)
+    const floorY = this.groundY + floorHeight / 2
     this.floor = this.add.rectangle(width / 2, floorY, width + 500, floorHeight, 0x332244)
     this.floor.setAlpha(0)
     this.physics.add.existing(this.floor, true) // static 
 
     // Character center: physics body bottom now lines up with the road top.
-    this.player = new Player(this, 120, GAME_CONFIG.GROUND_Y - 64)
+    this.player = new Player(this, 120, this.groundY - 64)
     this.physics.add.collider(this.player, this.floor)
     this.physics.add.overlap(this.player, this.enemies, this.hitEnemy, null, this)
 
@@ -76,8 +84,8 @@ export default class GameScene extends Phaser.Scene {
   spawnEnemy() {
     if (this.player.isDead) return
     
-    // Spawn between Y=100 and Y=GROUND_Y - 50
-    const spawnY = Phaser.Math.Between(100, GAME_CONFIG.GROUND_Y - 50)
+    // Spawn between Y=100 and the current city ground top.
+    const spawnY = Phaser.Math.Between(100, this.groundY - 50)
     const x = this.sys.game.config.width + 100
 
     const ufo = this.enemies.create(x, spawnY, 'ufo_hover')
@@ -198,11 +206,11 @@ export default class GameScene extends Phaser.Scene {
       this.score += distancePoints
       this.player.update(this.cursors, this.keys, delta)
       
-      // Update Parallax Backgrounds (Scale 2 means shift is doubled visually, so divide scrolling speed by 2)
-      this.bg1.tilePositionX += (this.scrollSpeed * dt * 1.0) / 2
-      this.bg2.tilePositionX += (this.scrollSpeed * dt * 0.6) / 2
-      this.bg3.tilePositionX += (this.scrollSpeed * dt * 0.3) / 2
-      this.bg4.tilePositionX += (this.scrollSpeed * dt * 0.1) / 2
+      // Update Parallax Backgrounds. Divide by layer scale because TileSprite scrolls in source pixels.
+      this.bg1.tilePositionX += (this.scrollSpeed * dt * 1.0) / this.bg1.scaleX
+      this.bg2.tilePositionX += (this.scrollSpeed * dt * 0.6) / this.bg2.scaleX
+      this.bg3.tilePositionX += (this.scrollSpeed * dt * 0.3) / this.bg3.scaleX
+      this.bg4.tilePositionX += (this.scrollSpeed * dt * 0.1) / this.bg4.scaleX
       
       // Update Enemies
       this.enemies.getChildren().forEach(enemy => {
