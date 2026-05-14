@@ -14,6 +14,7 @@ export default class GameScene extends Phaser.Scene {
   create() {
     this.lives = 3
     this.score = 0
+    this.bestScore = Number.parseInt(sessionStorage.getItem('modiManBestScore') || '0', 10)
     this.scrollSpeed = GAME_CONFIG.SCROLL_SPEED_BASE
 
     const width = this.sys.game.config.width
@@ -124,8 +125,17 @@ export default class GameScene extends Phaser.Scene {
     this.time.delayedCall(400, () => {
       if (!enemy) return
       this.score += 150
+      this.updateBestScore()
       enemy.destroy()
     })
+  }
+
+  updateBestScore() {
+    const score = Math.floor(this.score)
+    if (score <= this.bestScore) return
+
+    this.bestScore = score
+    sessionStorage.setItem('modiManBestScore', String(score))
   }
 
   getBeamTarget(ray) {
@@ -184,6 +194,7 @@ export default class GameScene extends Phaser.Scene {
         this.cameras.main.shake(150, 0.005)
 
         if (this.lives <= 0) {
+            this.updateBestScore()
             player.die()
             this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'GAME OVER', {
               fontSize: '64px',

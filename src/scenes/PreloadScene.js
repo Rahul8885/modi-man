@@ -22,6 +22,10 @@ export default class PreloadScene extends Phaser.Scene {
 
     // UI Elements
     this.load.image('modi_life', '/src/assets/modi_life.png')
+    this.load.image('menu_bg', '/src/assets/backgrounds/menu_bg.png')
+    this.load.image('modi_man_logo', '/src/assets/modi-man-logo.png')
+    this.load.image('delhi_thumbnail', '/src/assets/delhi_thumbnail.png')
+    this.load.image('mumbai_thumbnail', '/src/assets/mumbai_thumbnail.png')
 
     const loadSprite = (key, path, frameHeight = 128) => {
         this.load.spritesheet(key, path, { frameWidth: 128, frameHeight })
