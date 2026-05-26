@@ -12,6 +12,16 @@ export default class MenuScene extends Phaser.Scene {
     this.bestScore = Number.parseInt(sessionStorage.getItem('modiManBestScore') || '0', 10)
 
     this.addCoverImage('menu_bg', width, height)
+    // Play menu music if available
+    try {
+      const existing = this.sound.get('menu_music')
+      if (!existing || !existing.isPlaying) {
+        this.menuBgm = this.sound.add('menu_music', { volume: 0.6, loop: true })
+        this.menuBgm.play()
+      }
+    } catch (e) {
+      // ignore if audio not loaded
+    }
     this.drawLogo(width, height)
     this.drawMenuButtons(width, height)
 

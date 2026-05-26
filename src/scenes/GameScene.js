@@ -106,6 +106,7 @@ export default class GameScene extends Phaser.Scene {
     enemy.setVelocityX(-this.scrollSpeed * 0.2) // Slow it down heavily
     enemy.body.checkCollision.none = true
     enemy.play('ufo_explosion_anim', true)
+    try { this.sound.play('sfx_ufo_explosion', { volume: 0.6 }) } catch (e) {}
     this.finishEnemyExplosion(enemy)
   }
 
@@ -117,7 +118,7 @@ export default class GameScene extends Phaser.Scene {
     enemy.setVelocityX(-this.scrollSpeed * 0.2)
     enemy.body.checkCollision.none = true
     enemy.play('ufo_explosion_anim', true)
-
+    try { this.sound.play('sfx_ufo_explosion', { volume: 0.6 }) } catch (e) {}
     this.finishEnemyExplosion(enemy)
   }
 

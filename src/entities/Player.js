@@ -32,6 +32,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.groundedSince = scene.time.now
     this.airborneSince = 0
     this.moveState = 'run'
+    // Audio handles
+    try {
+      this.runSfx = scene.sound.add('sfx_modi_run', { loop: true, volume: 0.5 })
+    } catch (e) {
+      this.runSfx = null
+    }
   }
 
   die() {
@@ -43,6 +49,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Destroy any active lasers on death
     this.stopLaserBeam()
+    try { if (this.runSfx && this.runSfx.isPlaying) this.runSfx.stop() } catch (e) {}
+    try { if (this.scene && this.scene.sound) this.scene.sound.play('sfx_modi_hit', { volume: 0.6 }) } catch (e) {}
   }
 
   takeHit() {
@@ -71,6 +79,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
        console.debug('Player.takeHit: invincibility ended')
     }
   })
+    try { if (this.scene && this.scene.sound) this.scene.sound.play('sfx_modi_hit', { volume: 0.6 }) } catch (e) {}
     return false // returning false means taking real damage
   }
 
@@ -93,6 +102,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.isLaserFiring = true
 
     if (this.scene.cameras && this.scene.cameras.main) this.scene.cameras.main.shake(50, 0.002)
+    try { if (this.scene && this.scene.sound) this.scene.sound.play('sfx_laser', { volume: 0.6 }) } catch (e) {}
     return true
   }
 
@@ -130,6 +140,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.stop()
     this.setTexture(key === 'run' ? 'modi_run' : 'modi_fly', 0)
     try { this.play(key, true) } catch (e) { console.warn(`failed to play ${key} anim`, e) }
+    // Run SFX: loop while in 'run' state
+    if (key === 'run') {
+      try { if (this.runSfx && !this.runSfx.isPlaying) this.runSfx.play() } catch (e) {}
+    } else {
+      try { if (this.runSfx && this.runSfx.isPlaying) this.runSfx.stop() } catch (e) {}
+    }
   }
 
   updateLaserBeam(dt, keyHeld) {

@@ -46,6 +46,16 @@ export default class PreloadScene extends Phaser.Scene {
     loadSprite('ufo_hover', enemiesPath + 'Ufo_hover.png')
     loadSprite('ufo_explosion', enemiesPath + 'Ufo_explosion.png')
 
+    // Audio
+    this.load.audio('bgm_prologue', '/src/assets/sfx/prologue_epic.mp3')
+    this.load.audio('menu_music', '/src/assets/sfx/menu_music.mp3')
+    this.load.audio('sfx_laser', '/src/assets/sfx/sfx_laser.mp3')
+    this.load.audio('sfx_modi_hit', '/src/assets/sfx/modi_hit_sfx.mp3')
+    this.load.audio('sfx_modi_run', '/src/assets/sfx/modi_run_sfx.mp3')
+    this.load.audio('sfx_ufo_explosion', '/src/assets/sfx/ufo_explosion.mp3')
+    // alias death to hit (we'll add same file under another key so code can refer to 'sfx_modi_death')
+    this.load.audio('sfx_modi_death', '/src/assets/sfx/modi_hit_sfx.mp3')
+
     this.load.on('complete', () => {
       loadingText.destroy()
     })
@@ -67,6 +77,6 @@ export default class PreloadScene extends Phaser.Scene {
       repeat: 0
     })
 
-    this.scene.start('MenuScene')
+    this.scene.start('PrologueScene')
   }
 }
