@@ -9,9 +9,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this)
 
     // Physics sizing
-    this.body.setSize(32, 50)
-    // Offset standard 64x64 frame for center
-    this.body.setOffset(16, 14) 
+    this.body.setSize(40, 80)
+    this.body.setOffset(44, 48)
+    this.body.setCollideWorldBounds(true)
+    this.body.setMaxVelocity(0, 500)
+    this.setScale(1)
 
     this.createAnimations()
     
@@ -20,15 +22,200 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.laserCharge = GAME_CONFIG.LASER_CHARGE_MAX
     this.isDead = false
     this.isHurt = false
+    this.isInvincible = false
+    this.lastLaserAt = 0
+    this.lastLaserStoppedAt = 0
+    this.laserImpactUntil = 0
+    this.laserEndX = scene.scale.width + 80
+    this.isLaserFiring = false
+    this.laserBeamGraphics = scene.add.graphics().setDepth(60)
+    this.groundedSince = scene.time.now
+    this.airborneSince = 0
+    this.moveState = 'run'
+    // Audio handles
+    try {
+      this.runSfx = scene.sound.add('sfx_modi_run', { loop: true, volume: 0.5 })
+    } catch (e) {
+      this.runSfx = null
+    }
   }
 
   die() {
     if (this.isDead) return
     this.isDead = true
-    this.play('hurt', true)
+    this.play('hurt_fly', true)
     this.body.setVelocityY(-300)
-    // Optional: disable collision
     this.body.checkCollision.none = true
+
+    // Destroy any active lasers on death
+    this.stopLaserBeam()
+    try { if (this.runSfx && this.runSfx.isPlaying) this.runSfx.stop() } catch (e) {}
+    try { if (this.scene && this.scene.sound) this.scene.sound.play('sfx_modi_hit', { volume: 0.6 }) } catch (e) {}
+  }
+
+  takeHit() {
+    if (this.isInvincible || this.isDead) return true // true means handled/ignored
+
+    this.isInvincible = true
+    this.isHurt = true
+    this.body.setVelocityX(0)
+    this.play(this.body.touching.down ? 'hurt_run' : 'hurt_fly', true)
+
+  // Flash effect for the configured invincibility duration
+  const invDuration = (GAME_CONFIG && GAME_CONFIG.INVINCIBILITY_DURATION) ? GAME_CONFIG.INVINCIBILITY_DURATION : 2000
+
+  const flashes = Math.max(2, Math.floor(invDuration / 150))
+  console.debug('Player.takeHit: become invincible for', invDuration)
+  this.scene.tweens.add({
+    targets: this,
+    alpha: 0.2,
+    yoyo: true,
+    repeat: flashes - 1,
+    duration: 150,
+    onComplete: () => {
+       this.alpha = 1
+       this.isInvincible = false
+       this.isHurt = false
+       console.debug('Player.takeHit: invincibility ended')
+    }
+  })
+    try { if (this.scene && this.scene.sound) this.scene.sound.play('sfx_modi_hit', { volume: 0.6 }) } catch (e) {}
+    return false // returning false means taking real damage
+  }
+
+  shootLaser() {
+    return this.startLaserBeam()
+  }
+
+  startLaserBeam() {
+    const shotCost = GAME_CONFIG.LASER_SHOT_COST || 20
+    const now = this.scene.time.now
+    if (
+      this.isDead ||
+      this.isHurt ||
+      this.laserCharge < shotCost ||
+      now < this.laserImpactUntil ||
+      now - this.lastLaserAt < 120
+    ) return false
+
+    this.lastLaserAt = now
+    this.isLaserFiring = true
+
+    if (this.scene.cameras && this.scene.cameras.main) this.scene.cameras.main.shake(50, 0.002)
+    try { if (this.scene && this.scene.sound) this.scene.sound.play('sfx_laser', { volume: 0.6 }) } catch (e) {}
+    return true
+  }
+
+  stopLaserBeam() {
+    if (this.isLaserFiring) this.lastLaserStoppedAt = this.scene.time.now
+    this.isLaserFiring = false
+    if (this.laserBeamGraphics) this.laserBeamGraphics.clear()
+    this.laserEndX = this.scene.scale.width + 80
+  }
+
+  holdLaserAt(x, until) {
+    this.isLaserFiring = true
+    this.laserEndX = Math.max(this.x + 52, x)
+    this.laserImpactUntil = until
+    this.lastLaserStoppedAt = this.scene.time.now
+    this.drawLaserBeam()
+  }
+
+  isGrounded() {
+    return Boolean(this.body && (this.body.blocked.down || this.body.touching.down))
+  }
+
+  snapToGround() {
+    const groundY = this.scene.groundY || GAME_CONFIG.GROUND_Y
+    this.y = groundY - 64
+    this.body.setVelocityY(0)
+  }
+
+  playMovementAnim(key) {
+    if (this.isHurt || this.isDead) return
+    if (this.moveState === key) return
+    if (!this.scene.anims.exists(key)) return
+
+    this.moveState = key
+    this.stop()
+    this.setTexture(key === 'run' ? 'modi_run' : 'modi_fly', 0)
+    try { this.play(key, true) } catch (e) { console.warn(`failed to play ${key} anim`, e) }
+    // Run SFX: loop while in 'run' state
+    if (key === 'run') {
+      try { if (this.runSfx && !this.runSfx.isPlaying) this.runSfx.play() } catch (e) {}
+    } else {
+      try { if (this.runSfx && this.runSfx.isPlaying) this.runSfx.stop() } catch (e) {}
+    }
+  }
+
+  updateLaserBeam(dt, keyHeld) {
+    const now = this.scene.time.now
+
+    if (this.isDead || this.isHurt) {
+      this.stopLaserBeam()
+      return
+    }
+
+    if (now < this.laserImpactUntil) {
+      this.drawLaserBeam()
+      return
+    }
+
+    if (!keyHeld) {
+      this.stopLaserBeam()
+      return
+    }
+
+    this.laserEndX = this.scene.scale.width + 80
+    if (!this.isLaserFiring && !this.startLaserBeam()) return
+
+    this.laserCharge -= (GAME_CONFIG.LASER_DRAIN_RATE || 20) * dt
+    if (this.laserCharge <= 0) {
+      this.laserCharge = 0
+      this.stopLaserBeam()
+      return
+    }
+
+    this.drawLaserBeam()
+  }
+
+  drawLaserBeam() {
+    const startX = this.x + 48
+    const startY = this.y - 25
+    const endX = this.laserEndX
+
+    const flicker = Phaser.Math.Between(-1, 1)
+    this.laserBeamGraphics.clear()
+    this.laserBeamGraphics.lineStyle(12, 0xff2638, 0.16)
+    this.laserBeamGraphics.beginPath()
+    this.laserBeamGraphics.moveTo(startX, startY)
+    this.laserBeamGraphics.lineTo(endX, startY + flicker)
+    this.laserBeamGraphics.strokePath()
+    this.laserBeamGraphics.lineStyle(5, 0xff4050, 0.45)
+    this.laserBeamGraphics.beginPath()
+    this.laserBeamGraphics.moveTo(startX, startY)
+    this.laserBeamGraphics.lineTo(endX, startY)
+    this.laserBeamGraphics.strokePath()
+    this.laserBeamGraphics.lineStyle(2, 0xfff0f0, 0.95)
+    this.laserBeamGraphics.beginPath()
+    this.laserBeamGraphics.moveTo(startX, startY)
+    this.laserBeamGraphics.lineTo(endX, startY)
+    this.laserBeamGraphics.strokePath()
+  }
+
+  getLaserRay() {
+    if (!this.isLaserFiring) return null
+    if (this.scene.time.now < this.laserImpactUntil) return null
+
+    return {
+      startX: this.x + 48,
+      startY: this.y - 25,
+      endX: this.laserEndX
+    }
+  }
+
+  setLaserEndX(x) {
+    this.laserEndX = Math.max(this.x + 52, x)
   }
 
   createAnimations() {
@@ -52,37 +239,55 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     tryCreate('run', 'modi_run', 5)
     tryCreate('fly', 'modi_fly', 5, 10)
-    tryCreate('hurt', 'modi_hurt_run', 1, 6)
+    tryCreate('hurt_run', 'modi_hurt_run', 1, 6)
+    tryCreate('hurt_fly', 'modi_hurt_fly', 1, 6)
   }
 
-  update(cursors, keys) {
-    if (this.isDead || this.isHurt) return
+  update(cursors, keys, delta) {
+    if (this.isDead) return
 
-    // Natural recharge
-    if (this.laserCharge < GAME_CONFIG.LASER_CHARGE_MAX) {
-      this.laserCharge += GAME_CONFIG.LASER_RECHARGE_RATE * (1/60)
+    const dt = (delta || (1000 / 60)) / 1000
+    this.body.setVelocityX(0)
+    if (this.x < 120) this.x = 120
+    if (this.x > 180) this.x = 180
+
+    const laserHeld = Boolean(keys && keys.X && keys.X.isDown)
+    const rechargeDelay = GAME_CONFIG.LASER_RECHARGE_DELAY || 0
+    const canRecharge = !laserHeld && !this.isLaserFiring && this.scene.time.now - this.lastLaserStoppedAt >= rechargeDelay
+    if (canRecharge && this.laserCharge < GAME_CONFIG.LASER_CHARGE_MAX) {
+      this.laserCharge += GAME_CONFIG.LASER_RECHARGE_RATE * dt
       this.laserCharge = Math.min(this.laserCharge, GAME_CONFIG.LASER_CHARGE_MAX)
     }
 
-    // Input handlers
-    if (cursors.space.isDown) {
-      // Fly/Hover logic
+    this.updateLaserBeam(dt, laserHeld)
+
+    const now = this.scene.time.now
+    const spaceHeld = Boolean(cursors && cursors.space && cursors.space.isDown)
+    const grounded = this.isGrounded()
+    if (spaceHeld) {
+      this.groundedSince = 0
+      if (!this.airborneSince) this.airborneSince = now
       this.body.setVelocityY(GAME_CONFIG.PLAYER_FLY_VELOCITY)
-      if (this.anims.currentAnim?.key !== 'fly') {
-        this.play('fly', true)
-      }
-    } else {
-      // Grounded check
-      if (this.body.touching.down) {
-        if (this.anims.currentAnim?.key !== 'run') {
-            this.play('run', true)
-        }
-      } else {
-        // Falling
-        if (this.anims.currentAnim?.key !== 'fly') {
-           this.play('fly', true) 
-        }
-      }
+      this.setScale(1)
+      this.playMovementAnim('fly')
+      return
     }
+
+    if (grounded) {
+      this.airborneSince = 0
+      if (!this.groundedSince) this.groundedSince = now
+      this.setScale(1)
+      this.snapToGround()
+      this.playMovementAnim('run')
+      return
+    }
+
+    this.groundedSince = 0
+    if (!this.airborneSince) this.airborneSince = now
+    if (now - this.airborneSince >= 140) {
+      this.setScale(1)
+      this.playMovementAnim('fly')
+    }
+
   }
 }

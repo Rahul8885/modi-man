@@ -10,6 +10,16 @@ export default class BootScene extends Phaser.Scene {
   }
 
   create() {
-    this.scene.start('PreloadScene')
+    if (!document.fonts) {
+      this.scene.start('PreloadScene')
+      return
+    }
+
+    Promise.all([
+      document.fonts.load('700 64px Teko'),
+      document.fonts.load('600 24px Rajdhani')
+    ]).finally(() => {
+      this.scene.start('PreloadScene')
+    })
   }
 }

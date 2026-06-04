@@ -2,6 +2,7 @@ import Phaser from 'phaser'
 import BootScene from './scenes/BootScene.js'
 import PreloadScene from './scenes/PreloadScene.js'
 import MenuScene from './scenes/MenuScene.js'
+import PrologueScene from './scenes/PrologueScene.js'
 import GameScene from './scenes/GameScene.js'
 import HUDScene from './scenes/HUDScene.js'
 import CitySelectScene from './scenes/CitySelectScene.js'
@@ -27,6 +28,7 @@ const config = {
   scene: [
     BootScene,
     PreloadScene,
+    PrologueScene,
     MenuScene,
     CitySelectScene,
     GameScene,
