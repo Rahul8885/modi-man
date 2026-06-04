@@ -3,7 +3,7 @@ name: Deploy to itch.io
 on:
   push:
     branches:
-      - main  # triggers on every push to main
+      - master  # triggers on every push to main
 
 jobs:
   deploy:
