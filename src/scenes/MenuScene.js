@@ -65,6 +65,7 @@ export default class MenuScene extends Phaser.Scene {
 
   makeButton(x, y, w, h, label, onClick) {
     const c = this.add.container(x, y).setDepth(3)
+    const hit = this.add.rectangle(0, 0, w, h, 0xffffff, 0)
     const g = this.add.graphics()
     g.fillGradientStyle(0xffb347, 0xffb347, 0xff8c00, 0xff8c00, 1)
     g.fillRoundedRect(-w / 2, -h / 2, w, h, 4)
@@ -79,13 +80,12 @@ export default class MenuScene extends Phaser.Scene {
       letterSpacing: 3
     }).setOrigin(0.5).setResolution(2)
 
-    c.add([g, text])
+    c.add([g, text, hit])
     c.setSize(w, h)
-    c.setInteractive(new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h), Phaser.Geom.Rectangle.Contains)
-    c.input.cursor = 'pointer'
-    c.on('pointerover', () => c.setScale(1.04))
-    c.on('pointerout', () => c.setScale(1))
-    c.on('pointerdown', onClick)
+    hit.setInteractive({ useHandCursor: true })
+    hit.on('pointerover', () => c.setScale(1.04))
+    hit.on('pointerout', () => c.setScale(1))
+    hit.on('pointerdown', onClick)
     return c
   }
 

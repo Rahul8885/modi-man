@@ -67,6 +67,9 @@ export default class GameScene extends Phaser.Scene {
     this.keys = {
       X: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X)
     }
+    this.touchControls = { fly: false, laser: false, bounds: [] }
+    this.input.addPointer(2)
+    if (this.isMobileView()) this.createTouchControls(width, height)
     this.lastTapAt = 0
     this.input.on('pointerdown', this.handlePointerDown, this)
 
@@ -169,6 +172,7 @@ export default class GameScene extends Phaser.Scene {
 
   handlePointerDown(pointer) {
     if (!this.player || this.player.isDead) return
+    if (this.isTouchControlPointer(pointer)) return
 
     const now = pointer.event?.timeStamp || this.time.now
     if (now - this.lastTapAt <= 300) {
@@ -178,6 +182,65 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.lastTapAt = now
+  }
+
+  isMobileView() {
+    const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches
+    return this.sys.game.device.input.touch || isCoarse || window.innerWidth <= 900
+  }
+
+  isTouchControlPointer(pointer) {
+    if (!this.touchControls || !this.touchControls.bounds) return false
+
+    return this.touchControls.bounds.some(control => {
+      const dx = pointer.x - control.x
+      const dy = pointer.y - control.y
+      return dx * dx + dy * dy <= control.radius * control.radius
+    })
+  }
+
+  createTouchControls(width, height) {
+    const radius = 64
+    const y = height - 94
+
+    this.createTouchButton(104, y, radius, 'FLY', 'fly')
+    this.createTouchButton(width - 104, y, radius, 'LASER', 'laser')
+  }
+
+  createTouchButton(x, y, radius, label, key) {
+    const c = this.add.container(x, y).setDepth(100)
+    const bg = this.add.circle(0, 0, radius, key === 'fly' ? 0x00ffcc : 0xff3048, 0.18)
+    const ring = this.add.graphics()
+    ring.lineStyle(3, key === 'fly' ? 0x00ffcc : 0xff3048, 0.55)
+    ring.strokeCircle(0, 0, radius)
+    const text = this.add.text(0, 0, label, {
+      fontFamily: 'Rajdhani, Arial, sans-serif',
+      fontSize: key === 'fly' ? '22px' : '18px',
+      fontStyle: '700',
+      color: '#fff8e6',
+      letterSpacing: 2
+    }).setOrigin(0.5).setResolution(2)
+    const hit = this.add.circle(0, 0, radius + 8, 0xffffff, 0)
+    c.add([bg, ring, text, hit])
+    this.touchControls.bounds.push({ x, y, radius: radius + 16 })
+
+    const setPressed = pressed => {
+      this.touchControls[key] = pressed
+      c.setScale(pressed ? 0.94 : 1)
+      bg.setAlpha(pressed ? 0.34 : 0.18)
+    }
+
+    hit.setInteractive()
+    hit.on('pointerdown', pointer => {
+      this.touchControls[`${key}PointerId`] = pointer.id
+      setPressed(true)
+    })
+    hit.on('pointerup', pointer => {
+      if (this.touchControls[`${key}PointerId`] === pointer.id) setPressed(false)
+    })
+    hit.on('pointerout', pointer => {
+      if (this.touchControls[`${key}PointerId`] === pointer.id) setPressed(false)
+    })
   }
 
   hitEnemy(player, enemy) {
@@ -213,7 +276,13 @@ export default class GameScene extends Phaser.Scene {
   update(time, delta) {
     if (!this.player.isDead) {
       const dt = delta / 1000
-      this.player.update(this.cursors, this.keys, delta)
+      const controls = {
+        space: { isDown: this.cursors.space.isDown || this.touchControls.fly }
+      }
+      const keys = {
+        X: { isDown: this.keys.X.isDown || this.touchControls.laser }
+      }
+      this.player.update(controls, keys, delta)
       
       // Update Parallax Backgrounds. Divide by layer scale because TileSprite scrolls in source pixels.
       this.bg1.tilePositionX += (this.scrollSpeed * dt * 1.0) / this.bg1.scaleX

@@ -108,15 +108,13 @@ export default class CitySelectScene extends Phaser.Scene {
       letterSpacing: 1
     }).setOrigin(0.5).setResolution(2))
 
+    const hit = this.add.rectangle(0, infoH / 2, w, previewH + infoH, 0xffffff, 0)
+    container.add(hit)
     container.setSize(w, previewH + infoH)
-    container.setInteractive(
-      new Phaser.Geom.Rectangle(-w / 2, -previewH / 2, w, previewH + infoH),
-      Phaser.Geom.Rectangle.Contains
-    )
-    container.input.cursor = 'pointer'
-    container.on('pointerover', () => container.setScale(1.04))
-    container.on('pointerout', () => container.setScale(1))
-    container.on('pointerdown', () => this.startGame(city))
+    hit.setInteractive({ useHandCursor: true })
+    hit.on('pointerover', () => container.setScale(1.04))
+    hit.on('pointerout', () => container.setScale(1))
+    hit.on('pointerdown', () => this.startGame(city))
     return container
   }
 

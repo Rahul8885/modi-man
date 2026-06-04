@@ -2,14 +2,16 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>Modi Man: Defender of Bharat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Teko:wght@700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-    canvas { display: block; image-rendering: pixelated; } /* critical for retro look */
+    html, body, #game-container { width: 100%; height: 100%; touch-action: none; }
+    body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; height: 100svh; overflow: hidden; }
+    canvas { display: block; image-rendering: pixelated; touch-action: none; } /* critical for retro look */
   </style>
 </head>
 <body>
