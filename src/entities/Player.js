@@ -26,7 +26,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.lastLaserAt = 0
     this.lastLaserStoppedAt = 0
     this.laserImpactUntil = 0
-    this.laserEndX = scene.sys.game.config.width + 80
+    this.laserEndX = scene.scale.width + 80
     this.isLaserFiring = false
     this.laserBeamGraphics = scene.add.graphics().setDepth(60)
     this.groundedSince = scene.time.now
@@ -110,7 +110,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.isLaserFiring) this.lastLaserStoppedAt = this.scene.time.now
     this.isLaserFiring = false
     if (this.laserBeamGraphics) this.laserBeamGraphics.clear()
-    this.laserEndX = this.scene.sys.game.config.width + 80
+    this.laserEndX = this.scene.scale.width + 80
   }
 
   holdLaserAt(x, until) {
@@ -166,7 +166,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       return
     }
 
-    this.laserEndX = this.scene.sys.game.config.width + 80
+    this.laserEndX = this.scene.scale.width + 80
     if (!this.isLaserFiring && !this.startLaserBeam()) return
 
     this.laserCharge -= (GAME_CONFIG.LASER_DRAIN_RATE || 20) * dt

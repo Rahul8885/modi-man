@@ -6,8 +6,8 @@ export default class PreloadScene extends Phaser.Scene {
   }
 
   preload() {
-    const width = this.sys.game.config.width
-    const height = this.sys.game.config.height
+    const width = this.scale.width
+    const height = this.scale.height
     
     const loadingText = this.add.text(width / 2, height / 2, 'Loading assets...', { fontSize: '24px', fill: '#fff' }).setOrigin(0.5)
 

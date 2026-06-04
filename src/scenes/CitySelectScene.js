@@ -10,17 +10,18 @@ export default class CitySelectScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale
+    const mobile = width < 760 && height > width
     this.drawBackground(width, height)
 
-    this.add.text(width / 2, height * 0.16, 'CHOOSE YOUR CITY', {
+    this.add.text(width / 2, height * (mobile ? 0.09 : 0.16), 'CHOOSE YOUR CITY', {
       fontFamily: TEKO,
-      fontSize: '54px',
+      fontSize: mobile ? '38px' : '54px',
       fontStyle: '700',
       color: '#fff5cc',
       letterSpacing: 6
     }).setOrigin(0.5).setAlpha(0.92).setResolution(2)
 
-    this.add.text(width / 2, height * 0.235, 'EACH CITY. A DIFFERENT BATTLE.', {
+    this.add.text(width / 2, height * (mobile ? 0.145 : 0.235), 'EACH CITY. A DIFFERENT BATTLE.', {
       fontFamily: RAJDHANI,
       fontSize: '16px',
       fontStyle: '600',
@@ -28,12 +29,18 @@ export default class CitySelectScene extends Phaser.Scene {
       letterSpacing: 3
     }).setOrigin(0.5).setResolution(2)
 
-    const y = height * 0.53
-    this.createCityCard(width / 2 - 230, y, 'NEW DELHI', 'MIDNIGHT - MUGHAL SKYLINE', 'AVAILABLE', 'delhi')
-    this.createCityCard(width / 2, y, 'CYBER MUMBAI', 'NEON NIGHT - CYBERPUNK', 'AVAILABLE', 'mumbai')
-    this.createLockedCard(width / 2 + 230, y)
+    if (mobile) {
+      this.createCityCard(width / 2, height * 0.31, 'NEW DELHI', 'MIDNIGHT - MUGHAL SKYLINE', 'AVAILABLE', 'delhi').setScale(0.86)
+      this.createCityCard(width / 2, height * 0.56, 'CYBER MUMBAI', 'NEON NIGHT - CYBERPUNK', 'AVAILABLE', 'mumbai').setScale(0.86)
+      this.createLockedCard(width / 2, height * 0.81).setScale(0.86)
+    } else {
+      const y = height * 0.53
+      this.createCityCard(width / 2 - 230, y, 'NEW DELHI', 'MIDNIGHT - MUGHAL SKYLINE', 'AVAILABLE', 'delhi')
+      this.createCityCard(width / 2, y, 'CYBER MUMBAI', 'NEON NIGHT - CYBERPUNK', 'AVAILABLE', 'mumbai')
+      this.createLockedCard(width / 2 + 230, y)
+    }
 
-    this.add.text(width / 2, height * 0.88, 'SURVIVE LONGER TO UNLOCK NEW CITIES', {
+    if (!mobile) this.add.text(width / 2, height * 0.88, 'SURVIVE LONGER TO UNLOCK NEW CITIES', {
       fontFamily: RAJDHANI,
       fontSize: '16px',
       fontStyle: '600',
@@ -133,6 +140,7 @@ export default class CitySelectScene extends Phaser.Scene {
     container.add(this.add.text(-w / 2 + 16, previewH / 2 + 18, 'HIMALAYA', { fontFamily: TEKO, fontSize: '31px', fontStyle: '700', color: '#ffffff66', letterSpacing: 2 }).setOrigin(0, 0.5).setResolution(2))
     container.add(this.add.text(-w / 2 + 16, previewH / 2 + 44, 'COMING SOON', { fontFamily: RAJDHANI, fontSize: '12px', fontStyle: '600', color: '#ffffff66', letterSpacing: 1 }).setOrigin(0, 0.5).setResolution(2))
     container.add(this.add.text(-w / 2 + 16, previewH / 2 + 70, 'UNLOCK @ 5K', { fontFamily: RAJDHANI, fontSize: '11px', fontStyle: '700', color: '#ffffff44', letterSpacing: 1 }).setOrigin(0, 0.5).setResolution(2))
+    return container
   }
 
   startGame(city) {

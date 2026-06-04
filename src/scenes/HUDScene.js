@@ -7,7 +7,7 @@ export default class HUDScene extends Phaser.Scene {
   }
 
   create() {
-    const width = this.sys.game.config.width
+    const width = this.scale.width
 
     const pad = 22
     const hudDepth = 100

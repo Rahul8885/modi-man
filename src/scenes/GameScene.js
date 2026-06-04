@@ -17,15 +17,16 @@ export default class GameScene extends Phaser.Scene {
     this.bestScore = Number.parseInt(sessionStorage.getItem('modiManBestScore') || '0', 10)
     this.scrollSpeed = GAME_CONFIG.SCROLL_SPEED_BASE
 
-    const width = this.sys.game.config.width
-    const height = this.sys.game.config.height
+    const width = this.scale.width
+    const height = this.scale.height
+    this.physics.world.setBounds(0, 0, width, height)
 
     // Very dark background
     this.cameras.main.setBackgroundColor('#1a0a2e')
 
     const baseLayerWidth = 640
     const baseLayerHeight = 360
-    const layerScale = width / baseLayerWidth
+    const layerScale = Math.max(width / baseLayerWidth, height / baseLayerHeight)
     const groundKey = `${this.selectedCity}_1`
     const groundSource = this.textures.get(groundKey).getSourceImage()
     const groundBaseHeight = groundSource.height
@@ -69,7 +70,10 @@ export default class GameScene extends Phaser.Scene {
     }
     this.touchControls = { fly: false, laser: false, bounds: [] }
     this.input.addPointer(2)
-    if (this.isMobileView()) this.createTouchControls(width, height)
+    if (this.isMobileView()) {
+      this.createTouchControls(width, height)
+      this.createRefreshControl(width)
+    }
     this.lastTapAt = 0
     this.input.on('pointerdown', this.handlePointerDown, this)
 
@@ -90,7 +94,7 @@ export default class GameScene extends Phaser.Scene {
     
     // Spawn between Y=100 and the current city ground top.
     const spawnY = Phaser.Math.Between(100, this.groundY - 50)
-    const x = this.sys.game.config.width + 100
+    const x = this.scale.width + 100
 
     const ufo = this.enemies.create(x, spawnY, 'ufo_hover')
     ufo.body.allowGravity = false
@@ -200,11 +204,30 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createTouchControls(width, height) {
-    const radius = 64
+    const radius = Math.max(52, Math.min(64, width * 0.16))
     const y = height - 94
 
     this.createTouchButton(104, y, radius, 'FLY', 'fly')
     this.createTouchButton(width - 104, y, radius, 'LASER', 'laser')
+  }
+
+  createRefreshControl(width) {
+    const c = this.add.container(width - 58, 58).setDepth(101)
+    const bg = this.add.circle(0, 0, 34, 0x15172a, 0.58)
+    const ring = this.add.graphics()
+    ring.lineStyle(2, 0xffe7a8, 0.65)
+    ring.strokeCircle(0, 0, 34)
+    const text = this.add.text(0, 0, 'R', {
+      fontFamily: 'Rajdhani, Arial, sans-serif',
+      fontSize: '22px',
+      fontStyle: '700',
+      color: '#fff8e6'
+    }).setOrigin(0.5).setResolution(2)
+    const hit = this.add.circle(0, 0, 42, 0xffffff, 0)
+    c.add([bg, ring, text, hit])
+    this.touchControls.bounds.push({ x: width - 58, y: 58, radius: 48 })
+    hit.setInteractive()
+    hit.on('pointerdown', () => window.location.reload())
   }
 
   createTouchButton(x, y, radius, label, key) {
@@ -260,7 +283,7 @@ export default class GameScene extends Phaser.Scene {
         if (this.lives <= 0) {
             this.updateBestScore()
             player.die()
-            this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'GAME OVER', {
+            this.add.text(this.scale.width / 2, this.scale.height / 2, 'GAME OVER', {
               fontSize: '64px',
               fill: '#ff0000',
               fontStyle: 'bold'
@@ -304,7 +327,7 @@ export default class GameScene extends Phaser.Scene {
         if (beamTarget) {
           this.hitEnemyWithBeam(beamTarget.enemy, beamTarget.hitX)
         } else {
-          this.player.setLaserEndX(this.sys.game.config.width + 80)
+          this.player.setLaserEndX(this.scale.width + 80)
         }
       }
       

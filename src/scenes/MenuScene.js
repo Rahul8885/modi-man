@@ -46,13 +46,15 @@ export default class MenuScene extends Phaser.Scene {
       .setDepth(2)
 
     const source = this.textures.get('modi_man_logo').getSourceImage()
-    const maxW = width * 0.56
+    const mobile = width < 760
+    const maxW = width * (mobile ? 0.88 : 0.56)
     const maxH = height * 0.56
     logo.setScale(Math.min(maxW / source.width, maxH / source.height))
   }
 
   drawMenuButtons(width, height) {
-    this.makeButton(width / 2, height * 0.66, 220, 54, 'PLAY', () => this.openCitySelect())
+    const buttonW = Math.min(240, width * 0.68)
+    this.makeButton(width / 2, height * 0.66, buttonW, 58, 'PLAY', () => this.openCitySelect())
 
     this.add.text(width / 2, height * 0.77, 'BEST: ' + this.bestScore.toLocaleString('en-IN') + ' PTS', {
       fontFamily: RAJDHANI,

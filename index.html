@@ -9,13 +9,72 @@
   <link href="https://fonts.googleapis.com/css2?family=Teko:wght@700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body, #game-container { width: 100%; height: 100%; touch-action: none; }
-    body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; height: 100svh; overflow: hidden; }
-    canvas { display: block; image-rendering: pixelated; touch-action: none; } /* critical for retro look */
+    html, body, #game-container { width: 100%; height: 100%; min-height: 100dvh; touch-action: none; }
+    body { position: fixed; inset: 0; background: #050711; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+    #game-container { display: block; overflow: hidden; background: #050711; }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      touch-action: none;
+    } /* critical for retro look */
+    #rotate-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: none;
+      place-items: center;
+      background: #050711;
+      color: #fff5cc;
+      font: 700 24px Rajdhani, Arial, sans-serif;
+      text-align: center;
+      letter-spacing: 2px;
+      padding: 28px;
+    }
+    #rotate-screen span {
+      display: block;
+      margin-top: 10px;
+      color: #ffffff88;
+      font-size: 15px;
+      letter-spacing: 1px;
+    }
+    @media (orientation: portrait) and (pointer: coarse) {
+      #rotate-screen { display: grid; }
+    }
+    #fullscreen-button {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 998;
+      border: 1px solid rgba(255, 231, 168, 0.65);
+      border-radius: 6px;
+      background: rgba(5, 7, 17, 0.72);
+      color: #fff5cc;
+      font: 700 13px Rajdhani, Arial, sans-serif;
+      letter-spacing: 1px;
+      padding: 9px 12px;
+    }
+    @media (pointer: fine) {
+      #fullscreen-button { display: none; }
+    }
   </style>
 </head>
 <body>
   <div id="game-container"></div>
+  <div id="rotate-screen">ROTATE TO LANDSCAPE<span>Modi Man plays best wide.</span></div>
+  <button id="fullscreen-button" type="button">FULLSCREEN</button>
+  <script>
+    const fullscreenButton = document.getElementById('fullscreen-button')
+    const enterFullscreen = async () => {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen()
+        if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape')
+        fullscreenButton.style.display = 'none'
+      } catch (e) {}
+    }
+
+    fullscreenButton.addEventListener('click', enterFullscreen)
+    document.getElementById('game-container').addEventListener('pointerdown', enterFullscreen, { once: true })
+  </script>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
