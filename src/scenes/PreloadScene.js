@@ -11,21 +11,21 @@ export default class PreloadScene extends Phaser.Scene {
     
     const loadingText = this.add.text(width / 2, height / 2, 'Loading assets...', { fontSize: '24px', fill: '#fff' }).setOrigin(0.5)
 
-    const modiPath = '/src/assets/sprites/modi/'
-    const enemiesPath = '/src/assets/sprites/enemies/'
+    const modiPath = '/assets/sprites/modi/'
+    const enemiesPath = '/assets/sprites/enemies/'
     
     // Backgrounds
     for (let i = 1; i <= 4; i++) {
-        this.load.image(`delhi_${i}`, `/src/assets/backgrounds/delhi/delhi_${i}.png`)
-        this.load.image(`mumbai_${i}`, `/src/assets/backgrounds/mumbai/mumbai_${i}.png`)
+        this.load.image(`delhi_${i}`, `/assets/backgrounds/delhi/delhi_${i}.png`)
+        this.load.image(`mumbai_${i}`, `/assets/backgrounds/mumbai/mumbai_${i}.png`)
     }
 
     // UI Elements
-    this.load.image('modi_life', '/src/assets/modi_life.png')
-    this.load.image('menu_bg', '/src/assets/backgrounds/menu_bg.png')
-    this.load.image('modi_man_logo', '/src/assets/modi-man-logo.png')
-    this.load.image('delhi_thumbnail', '/src/assets/delhi_thumbnail.png')
-    this.load.image('mumbai_thumbnail', '/src/assets/mumbai_thumbnail.png')
+    this.load.image('modi_life', '/assets/modi_life.png')
+    this.load.image('menu_bg', '/assets/backgrounds/menu_bg.png')
+    this.load.image('modi_man_logo', '/assets/modi-man-logo.png')
+    this.load.image('delhi_thumbnail', '/assets/delhi_thumbnail.png')
+    this.load.image('mumbai_thumbnail', '/assets/mumbai_thumbnail.png')
 
     const loadSprite = (key, path, frameHeight = 128) => {
         this.load.spritesheet(key, path, { frameWidth: 128, frameHeight })
@@ -47,14 +47,14 @@ export default class PreloadScene extends Phaser.Scene {
     loadSprite('ufo_explosion', enemiesPath + 'Ufo_explosion.png')
 
     // Audio
-    this.load.audio('bgm_prologue', '/src/assets/sfx/prologue_epic.mp3')
-    this.load.audio('menu_music', '/src/assets/sfx/menu_music.mp3')
-    this.load.audio('sfx_laser', '/src/assets/sfx/sfx_laser.mp3')
-    this.load.audio('sfx_modi_hit', '/src/assets/sfx/modi_hit_sfx.mp3')
-    this.load.audio('sfx_modi_run', '/src/assets/sfx/modi_run_sfx.mp3')
-    this.load.audio('sfx_ufo_explosion', '/src/assets/sfx/ufo_explosion.mp3')
+    this.load.audio('bgm_prologue', '/assets/sfx/prologue_epic.mp3')
+    this.load.audio('menu_music', '/assets/sfx/menu_music.mp3')
+    this.load.audio('sfx_laser', '/assets/sfx/sfx_laser.mp3')
+    this.load.audio('sfx_modi_hit', '/assets/sfx/modi_hit_sfx.mp3')
+    this.load.audio('sfx_modi_run', '/assets/sfx/modi_run_sfx.mp3')
+    this.load.audio('sfx_ufo_explosion', '/assets/sfx/ufo_explosion.mp3')
     // alias death to hit (we'll add same file under another key so code can refer to 'sfx_modi_death')
-    this.load.audio('sfx_modi_death', '/src/assets/sfx/modi_hit_sfx.mp3')
+    this.load.audio('sfx_modi_death', '/assets/sfx/modi_hit_sfx.mp3')
 
     this.load.on('complete', () => {
       loadingText.destroy()
