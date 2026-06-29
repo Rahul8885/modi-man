@@ -52,6 +52,7 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.audio('menu_music', `${assetsPath}sfx/menu_music.mp3`)
     this.load.audio('sfx_laser', `${assetsPath}sfx/sfx_laser.mp3`)
     this.load.audio('sfx_modi_hit', `${assetsPath}sfx/modi_hit_sfx.mp3`)
+    this.load.audio('sfx_modi_die', `${assetsPath}sfx/sfx_modi_die.mp3`) // alias for hit, same file
     this.load.audio('sfx_modi_run', `${assetsPath}sfx/modi_run_sfx.mp3`)
     this.load.audio('sfx_ufo_explosion', `${assetsPath}sfx/ufo_explosion.mp3`)
     // alias death to hit (we'll add same file under another key so code can refer to 'sfx_modi_death')

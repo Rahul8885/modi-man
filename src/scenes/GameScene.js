@@ -99,34 +99,49 @@ export default class GameScene extends Phaser.Scene {
     const ufo = this.enemies.create(x, spawnY, 'ufo_hover')
     ufo.body.allowGravity = false
     ufo.setVelocityX(-this.scrollSpeed)
+    ufo.setData('hp', GAME_CONFIG.ENEMY_HIT_POINTS || 2)
     
-    // Play hover animation and shrink physics bounds (e.g. 60x60 out of 128x128)
+    // Play hover animation and give the UFO a larger hitbox to better match the sprite.
     ufo.play('ufo_hover_anim', true)
-    ufo.body.setSize(60, 60)
-    ufo.body.setOffset(34, 34)
+    ufo.body.setSize(80, 80)
+    ufo.body.setOffset(24, 24)
+  }
+
+  damageEnemy(enemy, hitX, isBeam = false) {
+    if (!enemy.active || enemy.getData('dying')) return
+
+    const currentHp = enemy.getData('hp') || 1
+    const nextHp = Math.max(0, currentHp - 1)
+    enemy.setData('hp', nextHp)
+
+    if (nextHp > 0) {
+      enemy.setTint(0xff9999)
+      this.time.delayedCall(120, () => {
+        if (enemy && enemy.active) enemy.clearTint()
+      })
+      enemy.setVelocityX(-this.scrollSpeed * 0.5)
+      if (isBeam) this.player.holdLaserAt(hitX, this.time.now + 420)
+      return
+    }
+
+    enemy.setData('dying', true)
+    enemy.body.checkCollision.none = true
+    enemy.setVelocityX(-this.scrollSpeed * 0.2)
+    enemy.play('ufo_explosion_anim', true)
+    try { this.sound.play('sfx_ufo_explosion', { volume: 0.6 }) } catch (e) {}
+    if (isBeam) this.player.holdLaserAt(hitX, this.time.now + 420)
+    this.finishEnemyExplosion(enemy)
   }
 
   hitEnemyWithLaser(laser, enemy) {
     if (!laser.active || !enemy.active || enemy.getData('dying')) return
-    enemy.setData('dying', true)
     laser.destroy()
-    enemy.setVelocityX(-this.scrollSpeed * 0.2) // Slow it down heavily
-    enemy.body.checkCollision.none = true
-    enemy.play('ufo_explosion_anim', true)
-    try { this.sound.play('sfx_ufo_explosion', { volume: 0.6 }) } catch (e) {}
-    this.finishEnemyExplosion(enemy)
+    this.damageEnemy(enemy, 0, false)
   }
 
   hitEnemyWithBeam(enemy, hitX) {
     if (!enemy.active || enemy.getData('dying')) return
-
-    enemy.setData('dying', true)
-    this.player.holdLaserAt(hitX, this.time.now + 420)
-    enemy.setVelocityX(-this.scrollSpeed * 0.2)
-    enemy.body.checkCollision.none = true
-    enemy.play('ufo_explosion_anim', true)
-    try { this.sound.play('sfx_ufo_explosion', { volume: 0.6 }) } catch (e) {}
-    this.finishEnemyExplosion(enemy)
+    this.damageEnemy(enemy, hitX, true)
   }
 
   finishEnemyExplosion(enemy) {
@@ -153,11 +168,12 @@ export default class GameScene extends Phaser.Scene {
     this.enemies.getChildren().forEach(enemy => {
       if (!enemy.active || enemy.getData('dying')) return
 
+      const body = enemy.body || {}
       const box = {
-        left: enemy.x - 45,
-        right: enemy.x + 45,
-        top: enemy.y - 28,
-        bottom: enemy.y + 20
+        left: body.x != null ? body.x : enemy.x - 45,
+        right: body.x != null ? body.x + body.width : enemy.x + 45,
+        top: body.y != null ? body.y : enemy.y - 40,
+        bottom: body.y != null ? body.y + body.height : enemy.y + 40
       }
 
       const verticalHit = ray.startY >= box.top && ray.startY <= box.bottom

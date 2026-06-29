@@ -50,7 +50,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // Destroy any active lasers on death
     this.stopLaserBeam()
     try { if (this.runSfx && this.runSfx.isPlaying) this.runSfx.stop() } catch (e) {}
-    try { if (this.scene && this.scene.sound) this.scene.sound.play('sfx_modi_hit', { volume: 0.6 }) } catch (e) {}
+    try { if (this.scene && this.scene.sound) this.scene.sound.play('sfx_modi_die', { volume: 0.6 }) } catch (e) {}
   }
 
   takeHit() {
@@ -122,13 +122,20 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   isGrounded() {
-    return Boolean(this.body && (this.body.blocked.down || this.body.touching.down))
+    const groundY = this.scene?.groundY || GAME_CONFIG.GROUND_Y
+    if (!this.body) return false
+    const bodyTouching = this.body.blocked.down || this.body.touching.down
+    const bodyAtGround = this.body.bottom >= groundY - 2
+    return Boolean(bodyTouching || bodyAtGround)
   }
 
   snapToGround() {
     const groundY = this.scene.groundY || GAME_CONFIG.GROUND_Y
     this.y = groundY - 64
-    this.body.setVelocityY(0)
+    if (this.body) {
+      this.body.setVelocityY(0)
+      this.body.y = groundY - this.body.height
+    }
   }
 
   playMovementAnim(key) {
@@ -157,6 +164,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (now < this.laserImpactUntil) {
+      if (!keyHeld) {
+        this.stopLaserBeam()
+        return
+      }
       this.drawLaserBeam()
       return
     }

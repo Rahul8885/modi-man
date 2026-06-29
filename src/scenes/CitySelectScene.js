@@ -87,7 +87,7 @@ export default class CitySelectScene extends Phaser.Scene {
 
     container.add(this.add.text(-w / 2 + 16, previewH / 2 + 18, title, {
       fontFamily: TEKO,
-      fontSize: '31px',
+      fontSize: title.length > 10 ? '23px' : '31px',
       fontStyle: '700',
       color: Phaser.Display.Color.IntegerToColor(accent).rgba,
       letterSpacing: 2

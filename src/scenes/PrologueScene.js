@@ -55,7 +55,7 @@ export default class PrologueScene extends Phaser.Scene {
   startMusic() {
     try {
       this.bgm = this.sound.add('bgm_prologue', { volume: 0, loop: true })
-      this.bgm.play({ seek: 2 })
+      this.bgm.play({ volume: 0, loop: true })
       this.tweens.add({
         targets: this.bgm,
         volume: 0.72,

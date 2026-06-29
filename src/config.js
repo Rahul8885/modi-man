@@ -12,5 +12,6 @@ export const GAME_CONFIG = {
   LASER_RECHARGE_DELAY: 1500, // ms after firing before recharge starts
   GRAVITY: 600,
   GROUND_Y: 630, // Fallback only; GameScene computes real ground from cropped PNG height.
+  ENEMY_HIT_POINTS: 2,
   INVINCIBILITY_DURATION: 2000,  // ms
 }
