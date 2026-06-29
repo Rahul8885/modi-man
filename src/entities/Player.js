@@ -61,24 +61,26 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.setVelocityX(0)
     this.play(this.body.touching.down ? 'hurt_run' : 'hurt_fly', true)
 
-  // Flash effect for the configured invincibility duration
-  const invDuration = (GAME_CONFIG && GAME_CONFIG.INVINCIBILITY_DURATION) ? GAME_CONFIG.INVINCIBILITY_DURATION : 2000
+    const invDuration = (GAME_CONFIG && GAME_CONFIG.INVINCIBILITY_DURATION) ? GAME_CONFIG.INVINCIBILITY_DURATION : 2000
+    const flashes = Math.max(2, Math.floor(invDuration / 150))
+    console.debug('Player.takeHit: become invincible for', invDuration)
 
-  const flashes = Math.max(2, Math.floor(invDuration / 150))
-  console.debug('Player.takeHit: become invincible for', invDuration)
-  this.scene.tweens.add({
-    targets: this,
-    alpha: 0.2,
-    yoyo: true,
-    repeat: flashes - 1,
-    duration: 150,
-    onComplete: () => {
-       this.alpha = 1
-       this.isInvincible = false
-       this.isHurt = false
-       console.debug('Player.takeHit: invincibility ended')
-    }
-  })
+    this.setTint(0xff7a7a)
+    this.scene.tweens.add({
+      targets: this,
+      alpha: 0.55,
+      yoyo: true,
+      repeat: flashes - 1,
+      duration: 150,
+      onComplete: () => {
+        this.alpha = 1
+        this.clearTint()
+        this.isInvincible = false
+        this.isHurt = false
+        console.debug('Player.takeHit: invincibility ended')
+      }
+    })
+
     try { if (this.scene && this.scene.sound) this.scene.sound.play('sfx_modi_hit', { volume: 0.6 }) } catch (e) {}
     return false // returning false means taking real damage
   }
@@ -275,6 +277,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const now = this.scene.time.now
     const spaceHeld = Boolean(cursors && cursors.space && cursors.space.isDown)
     const grounded = this.isGrounded()
+
+    if (this.isHurt) {
+      if (grounded && this.body.velocity.y > 0) this.body.setVelocityY(0)
+      if (!grounded && spaceHeld) this.body.setVelocityY(GAME_CONFIG.PLAYER_FLY_VELOCITY)
+      return
+    }
+
     if (spaceHeld) {
       this.groundedSince = 0
       if (!this.airborneSince) this.airborneSince = now
